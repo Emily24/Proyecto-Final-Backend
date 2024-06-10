@@ -41,7 +41,7 @@ app.get('/api/v1/tareas', async (req, res) => {
             responsable: true,
             estado: true,   
         }
-    })
+    }).toArray()
 
     // 5. Cerrar conexion
     await dbClient.close()
