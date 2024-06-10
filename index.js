@@ -39,9 +39,9 @@ app.get('/api/v1/tareas', async (req, res) => {
         projection: {
             titulo: true,
             responsable: true,
-            estado: true,
+            estado: true,   
         }
-    }).toarray()
+    })
 
     // 5. Cerrar conexion
     await dbClient.close()
@@ -83,7 +83,7 @@ app.get('/api/v1/tareas/:id', async (req, res) => {
 app.post('/api/v1/tareas', async (req, res) => {
 
     const tasksData = req.body
-    console.log(taksData)
+    console.log(tasksData)
 
     // 1. Conexion a la DB
     await dbClient.connect()
