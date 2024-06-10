@@ -1,13 +1,16 @@
 import bodyParser from 'body-parser'
+import cors from 'cors'
 import express from 'express'
 import { ObjectId } from 'mongodb'
 import dbClient from './db.js'
+
 
 const app = express()
 
 // permite recibir datos en el body
 app.use(bodyParser.json())
-
+// Permite a los navegadores aceptar Json
+app.use(cors())
 // DB info
 const dbName = 'task_app'
 const tasksCollectionName = 'tasks'
@@ -16,6 +19,9 @@ const tasksCollectionName = 'tasks'
 // Obtener Todo
 app.get('/api/v1/tareas', async (req, res) => {
 
+    const estado = req.query.estado
+    //console.log(estado)
+
     // 1. Conexion a la DB
     await dbClient.connect()
     // 2. Seleccionar la DB
@@ -23,8 +29,19 @@ app.get('/api/v1/tareas', async (req, res) => {
     // 3. Seleccionar la coleccion
     const tasksCollection = taskAppDB.collection(tasksCollectionName)
 
+    let filtro = {}
+    if (estado === 'activa' || estado === 'inactiva' || estado === 'finalizada') {
+        filtro = {estado: estado}
+    }
+
     // 4. Realizar la query
-    const tasklist = await tasksCollection.find({}).toarray()
+    const tasklist = await tasksCollection.find(filtro, {
+        projection: {
+            titulo: true,
+            responsable: true,
+            estado: true,
+        }
+    }).toarray()
 
     // 5. Cerrar conexion
     await dbClient.close()
@@ -37,6 +54,8 @@ app.get('/api/v1/tareas', async (req, res) => {
 
 // Obtener Uno
 app.get('/api/v1/tareas/:id', async (req, res) => {
+    
+    let id = req.params.id
 
     // 1. Conexion a la DB
     await dbClient.connect()
@@ -46,6 +65,8 @@ app.get('/api/v1/tareas/:id', async (req, res) => {
     const tasksCollection = taskAppDB.collection(tasksCollectionName)
 
     // 4. Realizar la query
+    id = new ObjectId(id)
+    const tarea = await tasksCollection.findOne({_id: id})
 
 
     // 5. Cerrar conexion
@@ -53,14 +74,16 @@ app.get('/api/v1/tareas/:id', async (req, res) => {
 
 
     res.json({
-        message: 'documento entregado'
+        message: 'documento entregado',
+        data: tarea
     })
 })
 
 // Crear
 app.post('/api/v1/tareas', async (req, res) => {
 
-    const taskData = req.body
+    const tasksData = req.body
+    console.log(taksData)
 
     // 1. Conexion a la DB
     await dbClient.connect()
@@ -71,9 +94,9 @@ app.post('/api/v1/tareas', async (req, res) => {
 
     // 4. Realizar la query
     await tasksCollection.insertOne({
-        titulo: taskData.titulo,
-        descripcion: taskData.descripcion,
-        responsable: taskData.responsable,
+        titulo: tasksData.titulo,
+        descripcion: tasksData.descripcion,
+        responsable: tasksData.responsable,
         estado: "inactiva"
     })
 
@@ -90,6 +113,7 @@ app.post('/api/v1/tareas', async (req, res) => {
 app.put('/api/v1/tareas/:id', async (req, res) => {
     const taskData = req.body
     let id = req.params.id
+    console.log(taskData)
 
     // 1. Conexion a la DB
     await dbClient.connect()
@@ -136,6 +160,8 @@ app.put('/api/v1/tareas/:id', async (req, res) => {
 // Eliminar
 app.delete('/api/v1/tareas/:id', async (req, res) => {
 
+    let id = req.params.id
+
     // 1. Conexion a la DB
     await dbClient.connect()
     // 2. Seleccionar la DB
@@ -144,6 +170,8 @@ app.delete('/api/v1/tareas/:id', async (req, res) => {
     const tasksCollection = taskAppDB.collection(tasksCollectionName)
 
     // 4. Realizar la query
+    id = new ObjectId(id)
+    await tasksCollection.deleteOne({_id: id})
 
 
 
@@ -157,5 +185,5 @@ app.delete('/api/v1/tareas/:id', async (req, res) => {
 
 const PORT = 3000
 app.listen(PORT, () => {
-    console.log(`API escuchando en el puert: ${PORT}`)
+    console.log(`API escuchando en el puerto: ${PORT}`)
 })
